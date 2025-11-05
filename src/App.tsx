@@ -56,7 +56,7 @@ export default function App() {
 
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
-  const [viewDate, setViewDate] = useState(new Date(2025, 10, 4)); // November 4, 2025
+  const [viewDate, setViewDate] = useState(new Date()); // November 4, 2025
 
   // --- Persist changes to localStorage ---
   useEffect(() => {
@@ -80,7 +80,7 @@ export default function App() {
 
   const remainingBalance = totalBankBalance - totalExpenses;
 
-  const currentDate = new Date(2025, 10, 4); // November 4, 2025
+  const currentDate = new Date(); // November 4, 2025
   const daysInMonth = new Date(
     viewDate.getFullYear(),
     viewDate.getMonth() + 1,
