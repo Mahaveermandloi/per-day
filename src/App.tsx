@@ -1,3 +1,6 @@
+
+
+
 import { useState, useEffect, useMemo } from "react";
 import { BankCard } from "./components/BankCard";
 import { BalanceOverview } from "./components/BalanceOverview";
@@ -14,12 +17,13 @@ export interface Bank {
 }
 
 export interface Expense {
-  date: string; // YYYY-MM-DD format
+  date: string; // YYYY-MM-DD
   amount: number;
+  bankId: string;
 }
 
 export default function App() {
-  // --- Load from localStorage or set defaults ---
+  // --- Load from localStorage or defaults ---
   const [banks, setBanks] = useState<Bank[]>(() => {
     const saved = localStorage.getItem("banks");
     return saved
@@ -56,9 +60,9 @@ export default function App() {
 
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
-  const [viewDate, setViewDate] = useState(new Date()); // November 4, 2025
+  const [viewDate, setViewDate] = useState(new Date());
 
-  // --- Persist changes to localStorage ---
+  // --- Save changes to localStorage ---
   useEffect(() => {
     localStorage.setItem("banks", JSON.stringify(banks));
   }, [banks]);
@@ -67,20 +71,19 @@ export default function App() {
     localStorage.setItem("expenses", JSON.stringify(expenses));
   }, [expenses]);
 
-  // --- Derived values ---
-  const totalBankBalance = useMemo(
-    () => banks.reduce((sum, bank) => sum + bank.balance, 0),
-    [banks]
-  );
-
+  // --- Derived Values ---
   const totalExpenses = useMemo(
     () => expenses.reduce((sum, e) => sum + e.amount, 0),
     [expenses]
   );
 
-  const remainingBalance = totalBankBalance - totalExpenses;
+  const totalBalance = useMemo(
+    () => banks.reduce((sum, b) => sum + b.balance, 0),
+    [banks]
+  );
 
-  const currentDate = new Date(); // November 4, 2025
+  const remainingBalance = totalBalance;
+  const currentDate = new Date();
   const daysInMonth = new Date(
     viewDate.getFullYear(),
     viewDate.getMonth() + 1,
@@ -93,24 +96,30 @@ export default function App() {
     [remainingBalance, remainingDays]
   );
 
-  // --- Handlers ---
-  const handleAddExpense = (date: Date, amount: number) => {
+  // --- Handle Adding/Updating Expenses ---
+  const handleAddExpense = (date: Date, amount: number, bankId: string) => {
     const dateString = `${date.getFullYear()}-${String(
       date.getMonth() + 1
     ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
     setExpenses((prev) => {
-      const existingIndex = prev.findIndex((e) => e.date === dateString);
-      if (existingIndex >= 0) {
-        const updated = [...prev];
-        updated[existingIndex] = { date: dateString, amount };
-        return updated;
-      }
-      return [...prev, { date: dateString, amount }];
+      // Add new expense (can have multiple per date)
+      const updated = [...prev, { date: dateString, amount, bankId }];
+
+      // Deduct from selected bank
+      setBanks((prevBanks) =>
+        prevBanks.map((bank) =>
+          bank.id === bankId ? { ...bank, balance: bank.balance - amount } : bank
+        )
+      );
+
+      return updated;
     });
+
     setSelectedDate(null);
   };
 
+  // --- Handle Manual Bank Balance Update ---
   const handleUpdateBank = (bankId: string, newBalance: number) => {
     setBanks((prev) =>
       prev.map((bank) =>
@@ -120,16 +129,15 @@ export default function App() {
     setSelectedBank(null);
   };
 
-  // --- UI ---
+  // --- Render ---
   return (
     <div className="min-h-screen bg-[#F8F9FA]">
       <div className="max-w-md mx-auto p-4 pb-8 space-y-6">
-        {/* --- Header --- */}
         <h1 className="text-2xl font-semibold text-center text-neutral-800 mt-2">
           💰 Expense Tracker
         </h1>
 
-        {/* --- Bank Cards --- */}
+        {/* Banks */}
         <div className="grid grid-cols-3 gap-3">
           {banks.map((bank) => (
             <BankCard
@@ -140,14 +148,14 @@ export default function App() {
           ))}
         </div>
 
-        {/* --- Balance Overview --- */}
+        {/* Summary */}
         <BalanceOverview
           totalBalance={remainingBalance}
           perDayBudget={perDayBudget}
           remainingDays={remainingDays}
         />
 
-        {/* --- Expense Calendar --- */}
+        {/* Calendar */}
         <ExpenseCalendar
           currentDate={currentDate}
           viewDate={viewDate}
@@ -158,12 +166,13 @@ export default function App() {
         />
       </div>
 
-      {/* --- Expense Dialog --- */}
+      {/* Expense Dialog */}
       {selectedDate && (
         <ExpenseDialog
+          banks={banks}
           date={selectedDate}
-          existingAmount={
-            expenses.find(
+          existingAmount={expenses
+            .filter(
               (e) =>
                 e.date ===
                 `${selectedDate.getFullYear()}-${String(
@@ -172,14 +181,14 @@ export default function App() {
                   2,
                   "0"
                 )}`
-            )?.amount || 0
-          }
+            )
+            .reduce((sum, e) => sum + e.amount, 0)}
           onSave={handleAddExpense}
           onClose={() => setSelectedDate(null)}
         />
       )}
 
-      {/* --- Bank Dialog --- */}
+      {/* Bank Dialog */}
       {selectedBank && (
         <BankDialog
           bank={selectedBank}

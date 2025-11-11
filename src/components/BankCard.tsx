@@ -8,8 +8,8 @@ interface BankCardProps {
 
 // Bank logos (using URLs)
 const bankLogos: Record<string, string> = {
-  sbi: "https://companieslogo.com/img/orig/SBIN.NS_BIG-b060a2ff.png?t=1720244493",
   ubi: "https://companieslogo.com/img/orig/UNIONBANK.NS-5bba728d.png?t=1720244494",
+  sbi: "https://companieslogo.com/img/orig/SBIN.NS_BIG-b060a2ff.png?t=1720244493",
   idfc: "https://companieslogo.com/img/orig/IDFCFIRSTB.NS_BIG-f326a18d.png?t=1720244492",
 };
 

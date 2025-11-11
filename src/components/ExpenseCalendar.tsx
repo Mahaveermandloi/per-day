@@ -1,5 +1,5 @@
-import { Expense } from '../App';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Expense } from "../App";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ExpenseCalendarProps {
   currentDate: Date;
@@ -10,37 +10,60 @@ interface ExpenseCalendarProps {
   onMonthChange: (date: Date) => void;
 }
 
-export function ExpenseCalendar({ currentDate, viewDate, expenses, perDayBudget, onDateClick, onMonthChange }: ExpenseCalendarProps) {
+export function ExpenseCalendar({
+  currentDate,
+  viewDate,
+  expenses,
+  perDayBudget,
+  onDateClick,
+  onMonthChange,
+}: ExpenseCalendarProps) {
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
   const today = currentDate.getDate();
-  const isCurrentMonth = currentDate.getFullYear() === year && currentDate.getMonth() === month;
+  const isCurrentMonth =
+    currentDate.getFullYear() === year && currentDate.getMonth() === month;
 
   // Get first day of month (0 = Sunday)
   const firstDayOfMonth = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
-                      'July', 'August', 'September', 'October', 'November', 'December'];
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
 
-  const getExpenseForDate = (day: number) => {
-    const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    return expenses.find(e => e.date === dateString);
+  const getExpensesForDate = (day: number) => {
+    const dateString = `${year}-${String(month + 1).padStart(2, "0")}-${String(
+      day
+    ).padStart(2, "0")}`;
+    return expenses.filter((e) => e.date === dateString);
   };
 
   const getDayColor = (day: number) => {
-    const expense = getExpenseForDate(day);
-    if (!expense) return 'bg-white';
-    
-    if (expense.amount > perDayBudget) {
-      return 'bg-red-100 border-red-300';
+    const dayExpenses = getExpensesForDate(day);
+    if (dayExpenses.length === 0) return "bg-white";
+
+    const totalForDay = dayExpenses.reduce((sum, e) => sum + e.amount, 0);
+    if (totalForDay > perDayBudget) {
+      return "bg-red-100 border-red-300";
     } else {
-      return 'bg-green-100 border-green-300';
+      return "bg-green-100 border-green-300";
     }
   };
 
   const days = [];
-  
+
   // Add empty cells for days before month starts
   for (let i = 0; i < firstDayOfMonth; i++) {
     days.push(<div key={`empty-${i}`} className="aspect-square" />);
@@ -49,9 +72,17 @@ export function ExpenseCalendar({ currentDate, viewDate, expenses, perDayBudget,
   // Add days of month
   for (let day = 1; day <= daysInMonth; day++) {
     const isToday = isCurrentMonth && day === today;
-    const expense = getExpenseForDate(day);
-    const dayColor = getDayColor(day);
-    
+
+    const dayExpenses = getExpensesForDate(day);
+    const totalForDay = dayExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+    const dayColor =
+      totalForDay > 0
+        ? totalForDay > perDayBudget
+          ? "bg-red-100 border-red-300"
+          : "bg-green-100 border-green-300"
+        : "bg-white";
+
     days.push(
       <button
         key={day}
@@ -60,15 +91,23 @@ export function ExpenseCalendar({ currentDate, viewDate, expenses, perDayBudget,
           aspect-square rounded-xl border transition-all duration-200
           hover:shadow-md cursor-pointer flex flex-col items-center justify-center
           ${dayColor}
-          ${isToday ? 'ring-2 ring-[#1A73E8] ring-offset-2' : 'border-neutral-200'}
+          ${
+            isToday
+              ? "ring-2 ring-[#1A73E8] ring-offset-2"
+              : "border-neutral-200"
+          }
         `}
       >
-        <span className={`text-sm ${isToday ? 'text-[#1A73E8]' : 'text-neutral-700'}`}>
+        <span
+          className={`text-sm ${
+            isToday ? "text-[#1A73E8]" : "text-neutral-700"
+          }`}
+        >
           {day}
         </span>
-        {expense && (
+        {totalForDay > 0 && (
           <span className="text-[10px] text-neutral-500 mt-0.5">
-            ₹{expense.amount}
+            ₹{totalForDay}
           </span>
         )}
       </button>
@@ -95,7 +134,9 @@ export function ExpenseCalendar({ currentDate, viewDate, expenses, perDayBudget,
         >
           <ChevronLeft size={20} className="text-neutral-600" />
         </button>
-        <h2 className="text-neutral-800">{monthNames[month]} {year}</h2>
+        <h2 className="text-neutral-800">
+          {monthNames[month]} {year}
+        </h2>
         <button
           onClick={handleNextMonth}
           className="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
@@ -107,7 +148,7 @@ export function ExpenseCalendar({ currentDate, viewDate, expenses, perDayBudget,
 
       {/* Day labels */}
       <div className="grid grid-cols-7 gap-2 mb-2">
-        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+        {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
           <div key={i} className="text-center text-neutral-400 text-sm">
             {day}
           </div>
@@ -115,12 +156,10 @@ export function ExpenseCalendar({ currentDate, viewDate, expenses, perDayBudget,
       </div>
 
       {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-2">
-        {days}
-      </div>
+      <div className="grid grid-cols-7 gap-2">{days}</div>
 
       {/* Legend */}
-      <div className="mt-4 pt-4 border-t border-neutral-100 flex gap-4 text-xs">
+      {/* <div className="mt-4 pt-4 border-t border-neutral-100 flex gap-4 text-xs">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded bg-green-100 border border-green-300" />
           <span className="text-neutral-600">Under budget</span>
@@ -129,7 +168,7 @@ export function ExpenseCalendar({ currentDate, viewDate, expenses, perDayBudget,
           <div className="w-4 h-4 rounded bg-red-100 border border-red-300" />
           <span className="text-neutral-600">Over budget</span>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }
